@@ -55,7 +55,16 @@ const uint8_t numSegments[] = {
   0x7F, // Số 8
   0x6F  // Số 9
 };
-
+const uint16_t LED_PINS[8] = {
+  GPIO_PIN_0, // Thanh A
+  GPIO_PIN_1, // Thanh B
+  GPIO_PIN_2, // Thanh C
+  GPIO_PIN_3, // Thanh D
+  GPIO_PIN_4, // Thanh E
+  GPIO_PIN_5, // Thanh F
+  GPIO_PIN_6, // Thanh G
+  GPIO_PIN_7  // Thanh DP
+};
 int count = 0;          // Biến đếm thời gian từ 0 -> 99
 uint8_t isRunning = 0;  // Trạng thái đếm (0: dừng, 1: đang đếm)
 
@@ -271,19 +280,16 @@ static void MX_GPIO_Init(void)
 void displayDigit(int num) {
   uint8_t segments = numSegments[num];
 
-  // Trích xuất từng bit dữ liệu từ biến 'segments' để xuất ra đúng chân PC0 -> PC7
-  // Giúp PORT C hoàn toàn độc lập, không làm ảnh hưởng đến các chân hệ thống khác
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, (segments & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh A
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, (segments & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh B
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, (segments & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh C
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, (segments & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh D
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, (segments & 0x10) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh E
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_5, (segments & 0x20) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh F
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, (segments & 0x40) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh G
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, (segments & 0x80) ? GPIO_PIN_SET : GPIO_PIN_RESET); // Thanh DP
+    for (int i = 0; i < 8; i++) {
+
+      int bitStatus = (segments >> i) & 0x01;
+
+      // Ghi trạng thái ra chân tương ứng trong mảng
+      HAL_GPIO_WritePin(GPIOC, LED_PINS[i], bitStatus ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    }
 }
 
-// Hàm thực hiện quét LED (Bật tắt luân phiên cực nhanh để đánh lừa mắt)
+// Hàm thực hiện quét LED
 void displayNumber(int num) {
   int tens = num / 10;   // Lấy chữ số hàng chục
   int units = num % 10;  // Lấy chữ số hàng đơn vị
@@ -295,7 +301,7 @@ void displayNumber(int num) {
     // Xuất dữ liệu hàng chục và BẬT LED hàng chục
     displayDigit(tens);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-    HAL_Delay(9); // Giữ sáng 3ms
+    HAL_Delay(9);
 
     // --- BƯỚC 2: HIỂN THỊ HÀNG ĐƠN VỊ ---
     // Tắt LED hàng chục trước
@@ -304,7 +310,7 @@ void displayNumber(int num) {
     // Xuất dữ liệu hàng đơn vị và BẬT LED hàng đơn vị
     displayDigit(units);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(9); // Giữ sáng 3ms
+    HAL_Delay(9);
   }
 /* USER CODE END 4 */
 
